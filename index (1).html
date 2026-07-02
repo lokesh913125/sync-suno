@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sync Suno — Saath Mein Suno</title>
+<meta name="description" content="Apne dost ke saath ek hi gaana, ek hi time pe, kahin bhi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0e0b14;
+    --bg-soft: #171220;
+    --panel: #1c1626;
+    --panel-line: #2c2438;
+    --cream: #f3ede4;
+    --amber: #e8a33d;
+    --coral: #e8654a;
+    --violet: #9b8cff;
+    --muted: #948aa8;
+    --success: #6fcf97;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(155,140,255,0.16), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(232,101,74,0.10), transparent 60%),
+      var(--bg);
+    color: var(--cream);
+    font-family: 'Manrope', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow-x:hidden;
+  }
+  .display{ font-family:'Fraunces', serif; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 20px 10px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background: linear-gradient(135deg, var(--coral), var(--amber));
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .brand-text{ font-family:'Fraunces', serif; font-weight:600; font-size:1.05rem; letter-spacing:0.2px; }
+  .brand-sub{ font-size:0.68rem; color:var(--muted); margin-top:-2px; letter-spacing:0.4px; }
+  .room-badge{
+    font-size:0.72rem; color:var(--muted); background:var(--panel);
+    border:1px solid var(--panel-line); padding:6px 12px; border-radius:20px;
+    display:none; align-items:center; gap:6px;
+  }
+  .room-badge.show{ display:flex; }
+  .dot-live{
+    width:6px; height:6px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 0 3px rgba(111,207,151,0.2);
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{ flex:1; display:flex; flex-direction:column; }
+  .hidden{ display:none !important; }
+
+  /* ---- Landing / Join screen ---- */
+  #landing{
+    flex:1; display:flex; flex-direction:column;
+    justify-content:center; padding: 10px 24px 40px;
+    max-width: 460px; margin: 0 auto; width:100%;
+  }
+  .hero-eyebrow{
+    font-size:0.72rem; letter-spacing:2px; text-transform:uppercase;
+    color: var(--violet); font-weight:700; margin-bottom:14px;
+  }
+  .hero-title{
+    font-family:'Fraunces', serif; font-weight:600; font-size:2.5rem;
+    line-height:1.08; letter-spacing:-0.5px; margin-bottom:14px;
+  }
+  .hero-title em{ font-style:italic; font-weight:300; color:var(--amber); }
+  .hero-desc{
+    color: var(--muted); font-size:0.98rem; line-height:1.6; margin-bottom:32px;
+  }
+
+  .action-card{
+    background: var(--panel); border:1px solid var(--panel-line);
+    border-radius: 20px; padding: 22px; margin-bottom:16px;
+  }
+  .action-label{
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;
+    color: var(--muted); font-weight:700; margin-bottom:12px;
+  }
+  .btn{
+    width:100%; border:none; border-radius:14px; padding:16px 18px;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:0.98rem;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn-primary{
+    background: linear-gradient(135deg, var(--coral), var(--amber));
+    color: #1a1210;
+  }
+  .btn-secondary{
+    background: transparent; color: var(--cream);
+    border: 1.5px solid var(--panel-line);
+  }
+  .input-row{ display:flex; gap:10px; margin-top:12px; }
+  input[type="text"]{
+    flex:1; background: var(--bg-soft); border:1.5px solid var(--panel-line);
+    color: var(--cream); border-radius:12px; padding:14px 16px;
+    font-family:'Manrope', sans-serif; font-size:1rem; letter-spacing:1px;
+    outline:none;
+  }
+  input[type="text"]:focus{ border-color: var(--violet); }
+  input[type="text"]::placeholder{ color: #5c5470; letter-spacing:0.3px; }
+
+  .divider-row{
+    display:flex; align-items:center; gap:12px; margin: 22px 0;
+    color: var(--muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px;
+  }
+  .divider-row::before, .divider-row::after{
+    content:''; flex:1; height:1px; background: var(--panel-line);
+  }
+
+  .footer-credit{
+    text-align:center; color:#4a4360; font-size:0.72rem; margin-top:30px; letter-spacing:0.3px;
+  }
+
+  /* ---- Room screen ---- */
+  #room{ flex:1; display:flex; flex-direction:column; padding: 6px 20px 24px; max-width:480px; margin:0 auto; width:100%; }
+
+  .share-strip{
+    background: var(--panel); border:1px solid var(--panel-line);
+    border-radius:16px; padding:14px 16px; display:flex; align-items:center;
+    justify-content:space-between; margin-bottom:18px; gap:10px;
+  }
+  .share-strip-text{ font-size:0.82rem; color:var(--muted); }
+  .share-strip-code{ font-family:'Fraunces', serif; font-weight:600; color:var(--amber); font-size:1rem; letter-spacing:1px; }
+  .copy-btn{
+    background: var(--bg-soft); border:1px solid var(--panel-line); color:var(--cream);
+    border-radius:10px; padding:9px 14px; font-size:0.78rem; font-weight:700;
+    cursor:pointer; white-space:nowrap; font-family:'Manrope',sans-serif;
+  }
+
+  .stage{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 20px 0 30px;
+  }
+  .art-wrap{
+    width: 240px; height:240px; border-radius: 24px; overflow:hidden;
+    background: linear-gradient(135deg, #2c2438, #1c1626);
+    border:1px solid var(--panel-line);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom: 26px; position:relative;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .art-wrap img{ width:100%; height:100%; object-fit:cover; }
+  .art-placeholder{ font-size:2.6rem; opacity:0.35; }
+  .art-wrap.playing::after{
+    content:''; position:absolute; inset:0;
+    border-radius:24px; box-shadow: inset 0 0 0 2px rgba(232,163,61,0.5);
+    animation: pulse-ring 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse-ring{
+    0%,100%{ box-shadow: inset 0 0 0 2px rgba(232,163,61,0.3); }
+    50%{ box-shadow: inset 0 0 0 2px rgba(232,163,61,0.7); }
+  }
+
+  .track-title{
+    font-family:'Fraunces', serif; font-weight:600; font-size:1.3rem;
+    text-align:center; margin-bottom:6px; padding: 0 10px;
+    max-width: 340px; line-height:1.3;
+  }
+  .track-sub{ color: var(--muted); font-size:0.85rem; margin-bottom:28px; }
+
+  .progress-wrap{ width:100%; max-width:320px; margin-bottom:22px; }
+  .progress-bar{
+    width:100%; height:5px; background: var(--panel-line); border-radius:10px;
+    overflow:hidden; cursor:pointer; position:relative;
+  }
+  .progress-fill{
+    height:100%; background: linear-gradient(90deg, var(--coral), var(--amber));
+    border-radius:10px; width:0%; transition: width 0.3s linear;
+  }
+  .time-row{
+    display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted);
+    margin-top:8px; font-variant-numeric: tabular-nums;
+  }
+
+  .controls-row{
+    display:flex; align-items:center; justify-content:center; gap:22px;
+    margin-bottom: 8px;
+  }
+  .ctrl-btn{
+    background:none; border:none; color:var(--cream); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0.85; transition: opacity 0.15s, transform 0.15s;
+  }
+  .ctrl-btn:active{ transform: scale(0.9); }
+  .ctrl-play{
+    width:64px; height:64px; border-radius:50%;
+    background: linear-gradient(135deg, var(--coral), var(--amber));
+    color:#1a1210; opacity:1;
+  }
+
+  .sync-status{
+    display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ---- Add song bar ---- */
+  .add-song-bar{
+    background: var(--panel); border:1px solid var(--panel-line);
+    border-radius:16px; padding:14px; margin-bottom:14px;
+  }
+  .add-song-row{ display:flex; gap:8px; }
+  .add-song-row input{ font-size:0.88rem; padding:12px 14px; letter-spacing:0.2px; }
+  .add-song-row button{
+    background: var(--bg-soft); border:1px solid var(--panel-line);
+    color:var(--amber); border-radius:10px; padding:0 18px; font-weight:700;
+    cursor:pointer; font-family:'Manrope',sans-serif; font-size:0.85rem;
+  }
+  .add-song-hint{ font-size:0.7rem; color:#5c5470; margin-top:10px; }
+
+  .search-results{
+    margin-top:12px; max-height:280px; overflow-y:auto;
+  }
+  .search-result-item{
+    display:flex; align-items:center; gap:12px; padding:9px;
+    border-radius:12px; cursor:pointer; margin-bottom:6px;
+  }
+  .search-result-item:active{ background: var(--bg-soft); }
+  .search-result-thumb{ width:56px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0; background:var(--bg-soft); }
+  .search-result-info{ flex:1; min-width:0; }
+  .search-result-title{ font-size:0.83rem; line-height:1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .search-result-channel{ font-size:0.7rem; color:var(--muted); margin-top:3px; }
+  .search-loading{ text-align:center; color:var(--muted); font-size:0.8rem; padding:16px; }
+  .search-empty{ text-align:center; color:#5c5470; font-size:0.78rem; padding:16px; }
+
+  /* Queue */
+  .queue-title{
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--muted); font-weight:700; margin: 4px 0 10px;
+  }
+  .queue-item{
+    display:flex; align-items:center; gap:12px; padding:11px 12px;
+    background: var(--panel); border:1px solid var(--panel-line);
+    border-radius:12px; margin-bottom:8px; cursor:pointer;
+  }
+  .queue-item.active{ border-color: var(--amber); background: rgba(232,163,61,0.08); }
+  .queue-thumb{ width:38px; height:38px; border-radius:8px; object-fit:cover; background:var(--bg-soft); flex-shrink:0; }
+  .queue-name{ font-size:0.85rem; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .queue-remove{ background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:4px; }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background: var(--panel); border:1px solid var(--panel-line); color:var(--cream);
+    padding:12px 20px; border-radius:12px; font-size:0.85rem;
+    opacity:0; pointer-events:none; transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index:100;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #yt-player{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden; }
+
+  ::selection{ background: var(--amber); color:#1a1210; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🎧</div>
+    <div>
+      <div class="brand-text">Sync Suno</div>
+      <div class="brand-sub">saath mein suno, door se bhi</div>
+    </div>
+  </div>
+  <div class="room-badge" id="roomBadge"><span class="dot-live"></span><span id="roomBadgeText"></span></div>
+</div>
+
+<!-- LANDING -->
+<div class="screen" id="landing">
+  <div class="hero-eyebrow">Kahin bhi ho, saath suno</div>
+  <h1 class="hero-title">Ek hi gaana,<br><em>ek hi pal</em> mein.</h1>
+  <p class="hero-desc">Room banao ya kisi ke room mein jud jao — gaana automatically sync ho jayega, chahe dost 1 km door ho ya 1000.</p>
+
+  <div class="action-card">
+    <div class="action-label">Naya room banao</div>
+    <button class="btn btn-primary" id="createRoomBtn">✦ Room Banao</button>
+  </div>
+
+  <div class="divider-row">ya</div>
+
+  <div class="action-card">
+    <div class="action-label">Dost ka room code daalo</div>
+    <div class="input-row">
+      <input type="text" id="joinCodeInput" placeholder="jaise: SUNO-4821" maxlength="10" autocapitalize="characters">
+    </div>
+    <div style="height:12px"></div>
+    <button class="btn btn-secondary" id="joinRoomBtn">Room Mein Jao →</button>
+  </div>
+
+  <div class="footer-credit">Made by Lokesh Patel · Lopa Studios</div>
+</div>
+
+<!-- ROOM -->
+<div class="screen hidden" id="room">
+  <div class="share-strip">
+    <div>
+      <div class="share-strip-text">Room code</div>
+      <div class="share-strip-code" id="currentRoomCode">—</div>
+    </div>
+    <button class="copy-btn" id="copyCodeBtn">Link Copy Karo</button>
+  </div>
+
+  <div class="add-song-bar">
+    <div class="add-song-row">
+      <input type="text" id="searchInput" placeholder="Gaane ka naam likho... jaise 'Kesariya'">
+      <button id="searchBtn">🔍</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <div class="stage">
+    <div class="art-wrap" id="artWrap">
+      <div class="art-placeholder" id="artPlaceholder">🎵</div>
+      <img id="artImg" style="display:none;">
+    </div>
+    <div class="track-title" id="trackTitle">Koi gaana add karo shuru karne ke liye</div>
+    <div class="track-sub" id="trackSub">Waiting for song...</div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="time-row">
+        <span id="curTime">0:00</span>
+        <span id="durTime">0:00</span>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <button class="ctrl-btn" id="prevBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button class="ctrl-btn ctrl-play" id="playBtn">
+        <svg id="playIcon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="nextBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zm-2 6l-8.5 6V6z"/></svg>
+      </button>
+    </div>
+
+    <div class="sync-status" id="syncStatus"><span class="dot-live"></span> Sync ho raha hai...</div>
+  </div>
+
+  <div id="queueSection" style="display:none;">
+    <div class="queue-title">Playlist</div>
+    <div id="queueList"></div>
+  </div>
+
+  <div class="footer-credit">Made by Lokesh Patel · Lopa Studios</div>
+</div>
+
+<div id="yt-player"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Config ----------
+  const KV_BASE = "https://kvdb.io"; // free keyless kv store
+  const KV_BUCKET_STORAGE_KEY = "syncsuno_bucket";
+  const POLL_INTERVAL = 1500;
+  const SYNC_TOLERANCE = 1.5; // seconds drift allowed before correcting
+
+  // Apni YouTube Data API v3 key yaha daalo (Google Cloud Console se free banti hai)
+  // Guide: console.cloud.google.com -> naya project -> "YouTube Data API v3" enable karo -> Credentials -> API Key banao
+  const YT_API_KEY = "PASTE_YOUR_YOUTUBE_API_KEY_HERE";
+  let searchDebounceTimer = null;
+
+  // ---------- State ----------
+  let bucket = null;
+  let roomCode = null;
+  let isHost = false;
+  let ytPlayer = null;
+  let ytReady = false;
+  let queue = [];
+  let currentIndex = -1;
+  let pollTimer = null;
+  let localPlaying = false;
+  let lastPushedState = null;
+  let suppressNextPush = false;
+  let progressTimer = null;
+
+  // ---------- Utility ----------
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 2200);
+  }
+
+  function genCode(){
+    const words = ["SUNO","BEAT","TUNE","VIBE","RAAG","SWAR","GAANA","MAUJ"];
+    const w = words[Math.floor(Math.random()*words.length)];
+    const n = Math.floor(1000 + Math.random()*8999);
+    return w + "-" + n;
+  }
+
+  function fmtTime(sec){
+    if(!sec || isNaN(sec)) return "0:00";
+    const m = Math.floor(sec/60);
+    const s = Math.floor(sec%60).toString().padStart(2,'0');
+    return m + ":" + s;
+  }
+
+  function extractYouTubeId(url){
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+    ];
+    for(const p of patterns){
+      const m = url.match(p);
+      if(m) return m[1];
+    }
+    return null;
+  }
+
+  async function kvGet(key){
+    try{
+      const res = await fetch(`${KV_BASE}/${bucket}/${key}`, {cache:"no-store"});
+      if(res.status === 404) return null;
+      if(!res.ok) return null;
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }catch(e){ return null; }
+  }
+
+  async function kvSet(key, value){
+    try{
+      await fetch(`${KV_BASE}/${bucket}/${key}`, {
+        method:"POST",
+        body: JSON.stringify(value)
+      });
+    }catch(e){ /* ignore, will retry next poll */ }
+  }
+
+  // ---------- YouTube IFrame API ----------
+  let ytApiLoaded = false;
+  function loadYouTubeAPI(){
+    return new Promise((resolve)=>{
+      if(window.YT && window.YT.Player){ resolve(); return; }
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+      window.onYouTubeIframeAPIReady = function(){ resolve(); };
+    });
+  }
+
+  async function initPlayer(){
+    await loadYouTubeAPI();
+    ytPlayer = new YT.Player('yt-player', {
+      height:'1', width:'1',
+      playerVars:{ playsinline:1, controls:0, disablekb:1, rel:0, modestbranding:1 },
+      events:{
+        onReady: ()=>{ ytReady = true; },
+        onStateChange: onPlayerStateChange
+      }
+    });
+  }
+
+  function onPlayerStateChange(e){
+    if(e.data === YT.PlayerState.PLAYING){
+      localPlaying = true;
+      document.getElementById('playIcon').innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+      document.getElementById('artWrap').classList.add('playing');
+      startProgressLoop();
+      if(!suppressNextPush) pushState('play');
+    } else if(e.data === YT.PlayerState.PAUSED){
+      localPlaying = false;
+      document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+      document.getElementById('artWrap').classList.remove('playing');
+      stopProgressLoop();
+      if(!suppressNextPush) pushState('pause');
+    } else if(e.data === YT.PlayerState.ENDED){
+      if(isHost) playNext();
+    }
+    suppressNextPush = false;
+  }
+
+  function startProgressLoop(){
+    stopProgressLoop();
+    progressTimer = setInterval(()=>{
+      if(!ytPlayer || !ytReady) return;
+      try{
+        const cur = ytPlayer.getCurrentTime();
+        const dur = ytPlayer.getDuration();
+        document.getElementById('curTime').textContent = fmtTime(cur);
+        document.getElementById('durTime').textContent = fmtTime(dur);
+        if(dur > 0) document.getElementById('progressFill').style.width = (cur/dur*100) + '%';
+      }catch(e){}
+    }, 500);
+  }
+  function stopProgressLoop(){ if(progressTimer) clearInterval(progressTimer); }
+
+  // ---------- Room / Sync logic ----------
+  function bucketFromRoom(code){
+    return "syncsuno_" + code.toLowerCase().replace(/[^a-z0-9]/g,'');
+  }
+
+  async function createRoom(){
+    roomCode = genCode();
+    bucket = bucketFromRoom(roomCode);
+    isHost = true;
+    await kvSet('state', { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() });
+    enterRoom();
+    toast("Room ban gaya! Link copy karke dost ko bhejo.");
+  }
+
+  async function joinRoom(code){
+    if(!code || code.trim().length < 3){ toast("Sahi room code daalo"); return; }
+    roomCode = code.trim().toUpperCase();
+    bucket = bucketFromRoom(roomCode);
+    isHost = false;
+    const existing = await kvGet('state');
+    if(existing === null){
+      toast("Room nahi mila — code check karo ya naya room banao");
+      bucket = null; roomCode = null;
+      return;
+    }
+    enterRoom();
+    applyRemoteState(existing, true);
+  }
+
+  function enterRoom(){
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('room').classList.remove('hidden');
+    document.getElementById('currentRoomCode').textContent = roomCode;
+    document.getElementById('roomBadge').classList.add('show');
+    document.getElementById('roomBadgeText').textContent = roomCode;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomCode);
+    window.history.replaceState({}, '', url.toString());
+
+    startPolling();
+  }
+
+  function startPolling(){
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async ()=>{
+      const state = await kvGet('state');
+      if(state) applyRemoteState(state, false);
+    }, POLL_INTERVAL);
+  }
+
+  async function pushState(action){
+    if(!bucket) return;
+    let time = 0;
+    try{ time = ytPlayer && ytReady ? ytPlayer.getCurrentTime() : 0; }catch(e){}
+    const state = {
+      queue: queue,
+      index: currentIndex,
+      playing: localPlaying,
+      time: time,
+      updatedAt: Date.now(),
+      action: action || null
+    };
+    lastPushedState = state;
+    await kvSet('state', state);
+  }
+
+  async function applyRemoteState(state, isInitial){
+    if(!state) return;
+    // avoid reacting to our own just-pushed state
+    if(lastPushedState && state.updatedAt === lastPushedState.updatedAt) return;
+
+    // sync queue
+    if(JSON.stringify(state.queue) !== JSON.stringify(queue)){
+      queue = state.queue || [];
+      renderQueue();
+    }
+
+    // sync current track
+    if(state.index !== currentIndex && state.index >= 0 && state.index < queue.length){
+      currentIndex = state.index;
+      await loadTrack(currentIndex, false);
+    }
+
+    if(!ytReady) return;
+
+    // sync play/pause
+    try{
+      const playerState = ytPlayer.getPlayerState();
+      const curTime = ytPlayer.getCurrentTime();
+
+      if(state.playing && playerState !== YT.PlayerState.PLAYING){
+        suppressNextPush = true;
+        ytPlayer.seekTo(state.time + ((Date.now()-state.updatedAt)/1000), true);
+        ytPlayer.playVideo();
+      } else if(!state.playing && playerState === YT.PlayerState.PLAYING){
+        suppressNextPush = true;
+        ytPlayer.pauseVideo();
+      } else if(state.playing && playerState === YT.PlayerState.PLAYING){
+        const expectedTime = state.time + ((Date.now()-state.updatedAt)/1000);
+        if(Math.abs(curTime - expectedTime) > SYNC_TOLERANCE){
+          ytPlayer.seekTo(expectedTime, true);
+        }
+      }
+    }catch(e){}
+  }
+
+  // ---------- Search (YouTube Data API v3) ----------
+  async function searchYouTube(query){
+    const resultsBox = document.getElementById('searchResults');
+    if(!query || query.trim().length < 2){ resultsBox.innerHTML = ''; return; }
+
+    if(!YT_API_KEY || YT_API_KEY.indexOf('PASTE_') === 0){
+      resultsBox.innerHTML = '<div class="search-empty">API key set nahi hui — index.html mein YT_API_KEY daalo.</div>';
+      return;
+    }
+
+    resultsBox.innerHTML = '<div class="search-loading">Dhundh rahe hai...</div>';
+
+    try{
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if(data.error){
+        resultsBox.innerHTML = `<div class="search-empty">Search fail hui: ${data.error.message || 'API error'}</div>`;
+        return;
+      }
+
+      if(!data.items || data.items.length === 0){
+        resultsBox.innerHTML = '<div class="search-empty">Kuch nahi mila, dusra naam try karo</div>';
+        return;
+      }
+
+      resultsBox.innerHTML = '';
+      data.items.forEach(item=>{
+        const vid = item.id.videoId;
+        const title = item.snippet.title;
+        const channel = item.snippet.channelTitle;
+        const thumb = item.snippet.thumbnails.default.url;
+
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        div.innerHTML = `
+          <img class="search-result-thumb" src="${thumb}">
+          <div class="search-result-info">
+            <div class="search-result-title">${escapeHtml(title)}</div>
+            <div class="search-result-channel">${escapeHtml(channel)}</div>
+          </div>
+        `;
+        div.addEventListener('click', ()=>{
+          addSongById(vid, title);
+          resultsBox.innerHTML = '';
+          document.getElementById('searchInput').value = '';
+        });
+        resultsBox.appendChild(div);
+      });
+    }catch(e){
+      resultsBox.innerHTML = '<div class="search-empty">Search fail hui, phir try karo</div>';
+    }
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- Track / Queue management ----------
+  async function addSongById(id, title){
+    const track = { id, title: title || "YouTube Song", thumb: `https://img.youtube.com/vi/${id}/hqdefault.jpg` };
+    queue.push(track);
+    renderQueue();
+
+    if(currentIndex === -1){
+      currentIndex = 0;
+      await loadTrack(0, true);
+    }
+    pushState('queue_update');
+    toast("Gaana add ho gaya 🎵");
+  }
+
+  async function loadTrack(idx, autoplay){
+    if(idx < 0 || idx >= queue.length) return;
+    currentIndex = idx;
+    const track = queue[idx];
+    if(!ytReady){ await initPlayer(); }
+    suppressNextPush = true;
+    ytPlayer.cueVideoById(track.id);
+    if(autoplay){
+      setTimeout(()=>{ suppressNextPush = true; ytPlayer.playVideo(); }, 400);
+    }
+    updateNowPlaying();
+    renderQueue();
+  }
+
+  function updateNowPlaying(){
+    const track = queue[currentIndex];
+    if(!track) return;
+    document.getElementById('trackTitle').textContent = track.title || "Loading...";
+    document.getElementById('trackSub').textContent = "Ab baj raha hai";
+    document.getElementById('artImg').src = track.thumb;
+    document.getElementById('artImg').style.display = 'block';
+    document.getElementById('artPlaceholder').style.display = 'none';
+  }
+
+  function renderQueue(){
+    const section = document.getElementById('queueSection');
+    const list = document.getElementById('queueList');
+    if(queue.length === 0){ section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = '';
+    queue.forEach((t, i)=>{
+      const div = document.createElement('div');
+      div.className = 'queue-item' + (i === currentIndex ? ' active' : '');
+      div.innerHTML = `
+        <img class="queue-thumb" src="${t.thumb}">
+        <div class="queue-name">${t.title || 'Loading...'}</div>
+        <button class="queue-remove" data-idx="${i}">✕</button>
+      `;
+      div.addEventListener('click', (e)=>{
+        if(e.target.closest('.queue-remove')) return;
+        loadTrack(i, true);
+        pushState('track_change');
+      });
+      div.querySelector('.queue-remove').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const idx = parseInt(e.target.dataset.idx);
+        queue.splice(idx, 1);
+        if(currentIndex === idx){ currentIndex = -1; }
+        else if(currentIndex > idx){ currentIndex--; }
+        renderQueue();
+        pushState('queue_update');
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function playNext(){
+    if(currentIndex < queue.length - 1){
+      loadTrack(currentIndex + 1, true);
+      pushState('track_change');
+    }
+  }
+  function playPrev(){
+    if(currentIndex > 0){
+      loadTrack(currentIndex - 1, true);
+      pushState('track_change');
+    }
+  }
+
+  // ---------- Event wiring ----------
+  document.getElementById('createRoomBtn').addEventListener('click', createRoom);
+  document.getElementById('joinRoomBtn').addEventListener('click', ()=> joinRoom(document.getElementById('joinCodeInput').value));
+  document.getElementById('joinCodeInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') joinRoom(e.target.value); });
+
+  document.getElementById('searchBtn').addEventListener('click', ()=> searchYouTube(document.getElementById('searchInput').value));
+  document.getElementById('searchInput').addEventListener('input', (e)=>{
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(()=> searchYouTube(e.target.value), 500);
+  });
+  document.getElementById('searchInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); searchYouTube(e.target.value); }
+  });
+
+  document.getElementById('playBtn').addEventListener('click', async ()=>{
+    if(!ytReady){ await initPlayer(); }
+    if(currentIndex === -1){ toast("Pehle ek gaana add karo"); return; }
+    const state = ytPlayer.getPlayerState();
+    if(state === YT.PlayerState.PLAYING){ ytPlayer.pauseVideo(); }
+    else{ ytPlayer.playVideo(); }
+  });
+  document.getElementById('nextBtn').addEventListener('click', playNext);
+  document.getElementById('prevBtn').addEventListener('click', playPrev);
+
+  document.getElementById('progressBar').addEventListener('click', (e)=>{
+    if(!ytReady || currentIndex === -1) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const dur = ytPlayer.getDuration();
+    ytPlayer.seekTo(dur * pct, true);
+    pushState('seek');
+  });
+
+  document.getElementById('copyCodeBtn').addEventListener('click', ()=>{
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomCode);
+    navigator.clipboard.writeText(url.toString()).then(()=>{
+      toast("Link copy ho gaya! Dost ko bhejo 🎵");
+    }).catch(()=>{
+      toast("Room code: " + roomCode);
+    });
+  });
+
+  // ---------- Auto-join from URL ----------
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if(roomParam){
+      document.getElementById('joinCodeInput').value = roomParam;
+      joinRoom(roomParam);
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
