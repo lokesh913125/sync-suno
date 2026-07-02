@@ -7,6 +7,8 @@
 <meta name="description" content="Listen to the same song with your friend at the exact same moment, no matter how far apart you are.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
   :root{
     --bg: #0e0b14;
@@ -390,10 +392,20 @@
   "use strict";
 
   // ---------- Config ----------
-  const KV_BASE = "https://api.jsonstorage.net/v1/json"; // free, CORS-enabled JSON store; returns ID in the response body
-  const KV_BUCKET_STORAGE_KEY = "syncsuno_bucket";
-  const POLL_INTERVAL = 1500;
   const SYNC_TOLERANCE = 1.5; // seconds drift allowed before correcting
+
+  // Paste your Firebase project config here (same project ShubhCard uses is fine).
+  // Get this from: Firebase Console -> Project Settings -> General -> Your apps -> SDK setup and configuration
+  // IMPORTANT: Realtime Database must be enabled in this project (Build -> Realtime Database -> Create Database).
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHIv_4xsNjH3jY5vo04cr0H_K8U4W7KJc",
+    authDomain: "studio-6637376515-46529.firebaseapp.com",
+    databaseURL: "https://studio-6637376515-46529-default-rtdb.firebaseio.com",
+    projectId: "studio-6637376515-46529",
+    storageBucket: "studio-6637376515-46529.firebasestorage.app",
+    messagingSenderId: "649473493591",
+    appId: "1:649473493591:web:5ee6658c92828dba583112"
+  };
 
   // Paste your YouTube Data API v3 key here (free from Google Cloud Console)
   // Guide: console.cloud.google.com -> New Project -> enable "YouTube Data API v3" -> Credentials -> Create API Key
@@ -408,11 +420,28 @@
   let ytReady = false;
   let queue = [];
   let currentIndex = -1;
-  let pollTimer = null;
   let localPlaying = false;
   let lastPushedState = null;
   let suppressNextPush = false;
   let progressTimer = null;
+  let roomRef = null;      // Firebase Realtime Database ref for the current room
+  let firebaseReady = false;
+
+  function initFirebase(){
+    if(firebaseReady) return true;
+    if(!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PASTE_') === 0){
+      toast("Firebase not configured yet — add firebaseConfig in index.html");
+      return false;
+    }
+    try{
+      firebase.initializeApp(firebaseConfig);
+      firebaseReady = true;
+      return true;
+    }catch(e){
+      toast("Firebase failed to initialize — check your config values");
+      return false;
+    }
+  }
 
   // ---------- Utility ----------
   function toast(msg){
@@ -447,25 +476,18 @@
     return null;
   }
 
-  // Each room's data lives at KV_BASE/{bucket}, where bucket is the
-  // "userId/itemId" path returned when the room was created.
+  // Each room's data lives at Firebase path "rooms/{bucket}".
   async function kvGet(){
     try{
-      const res = await fetch(`${KV_BASE}/${bucket}`, {cache:"no-store", headers:{"Accept":"application/json"}});
-      if(res.status === 404) return null;
-      if(!res.ok) return null;
-      return await res.json();
+      const snap = await firebase.database().ref('rooms/' + bucket).once('value');
+      return snap.exists() ? snap.val() : null;
     }catch(e){ return null; }
   }
 
   async function kvSet(value){
     try{
-      await fetch(`${KV_BASE}/${bucket}`, {
-        method:"PUT",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(value)
-      });
-    }catch(e){ /* ignore, will retry next poll */ }
+      await firebase.database().ref('rooms/' + bucket).set(value);
+    }catch(e){ /* ignore, will retry on next change */ }
   }
 
   // ---------- Media Session (lock-screen controls) + Wake Lock ----------
@@ -587,42 +609,29 @@
   function stopProgressLoop(){ if(progressTimer) clearInterval(progressTimer); }
 
   // ---------- Room / Sync logic ----------
-  // jsonstorage.net creates a fresh JSON record when you POST to it, and —
-  // importantly — returns its ID directly in the JSON response body
-  // (as { "uri": "https://api.jsonstorage.net/v1/json/{userId}/{itemId}" }).
-  // This avoids relying on response headers like Location, which browsers
-  // hide from JavaScript on cross-origin requests unless a server opts in —
-  // that hidden-header issue was the actual cause of "create room" failing.
-  async function createJsonRecord(initialState){
-    const res = await fetch(KV_BASE, {
-      method:"POST",
-      headers:{"Content-Type":"application/json", "Accept":"application/json"},
-      body: JSON.stringify(initialState)
-    });
-    if(!res.ok) throw new Error("record create failed: " + res.status);
-    const data = await res.json();
-    if(!data || !data.uri) throw new Error("no uri in response");
-    const marker = "/v1/json/";
-    const idx = data.uri.indexOf(marker);
-    if(idx === -1) throw new Error("unexpected uri format");
-    return data.uri.substring(idx + marker.length);
-  }
-
+  // Each room is a node under "rooms/" in Firebase Realtime Database.
+  // Firebase generates a unique key when we push a new room — that key
+  // becomes the room code. All connected clients get instant updates via
+  // a live listener instead of having to poll a server every few seconds.
   async function createRoom(){
+    if(!initFirebase()) return;
     try{
       toast("Creating room...");
       const initialState = { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() };
-      bucket = await createJsonRecord(initialState);
+      const newRef = firebase.database().ref('rooms').push();
+      await newRef.set(initialState);
+      bucket = newRef.key;
       roomCode = bucket;
       isHost = true;
       enterRoom();
       toast("Room created! Copy the link and send it to your friend.");
     }catch(e){
-      toast("Couldn't create room, check your connection and try again");
+      toast("Couldn't create room — check your Firebase setup and connection");
     }
   }
 
   async function joinRoom(code){
+    if(!initFirebase()) return;
     if(!code || code.trim().length < 3){ toast("Enter a valid room code"); return; }
     roomCode = code.trim();
     bucket = roomCode;
@@ -648,15 +657,16 @@
     url.searchParams.set('room', roomCode);
     window.history.replaceState({}, '', url.toString());
 
-    startPolling();
+    startRealtimeSync();
   }
 
-  function startPolling(){
-    if(pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(async ()=>{
-      const state = await kvGet('state');
+  function startRealtimeSync(){
+    if(roomRef) roomRef.off();
+    roomRef = firebase.database().ref('rooms/' + bucket);
+    roomRef.on('value', (snap)=>{
+      const state = snap.val();
       if(state) applyRemoteState(state, false);
-    }, POLL_INTERVAL);
+    });
   }
 
   async function pushState(action){
