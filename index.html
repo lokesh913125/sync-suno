@@ -682,7 +682,7 @@
       action: action || null
     };
     lastPushedState = state;
-    await kvSet('state', state);
+    await kvSet(state);
   }
 
   async function applyRemoteState(state, isInitial){
