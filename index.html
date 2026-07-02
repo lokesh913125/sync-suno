@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sync Suno — Saath Mein Suno</title>
-<meta name="description" content="Apne dost ke saath ek hi gaana, ek hi time pe, kahin bhi.">
+<title>Sync Suno — Listen Together</title>
+<meta name="description" content="Listen to the same song with your friend at the exact same moment, no matter how far apart you are.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -111,7 +111,7 @@
   input[type="text"]{
     flex:1; background: var(--bg-soft); border:1.5px solid var(--panel-line);
     color: var(--cream); border-radius:12px; padding:14px 16px;
-    font-family:'Manrope', sans-serif; font-size:1rem; letter-spacing:1px;
+    font-family:'Manrope', sans-serif; font-size:16px; letter-spacing:0.3px;
     outline:none;
   }
   input[type="text"]:focus{ border-color: var(--violet); }
@@ -138,7 +138,7 @@
     justify-content:space-between; margin-bottom:18px; gap:10px;
   }
   .share-strip-text{ font-size:0.82rem; color:var(--muted); }
-  .share-strip-code{ font-family:'Fraunces', serif; font-weight:600; color:var(--amber); font-size:1rem; letter-spacing:1px; }
+  .share-strip-code{ font-family:'Fraunces', serif; font-weight:600; color:var(--amber); font-size:0.85rem; letter-spacing:0.3px; word-break:break-all; }
   .copy-btn{
     background: var(--bg-soft); border:1px solid var(--panel-line); color:var(--cream);
     border-radius:10px; padding:9px 14px; font-size:0.78rem; font-weight:700;
@@ -217,7 +217,7 @@
     border-radius:16px; padding:14px; margin-bottom:14px;
   }
   .add-song-row{ display:flex; gap:8px; }
-  .add-song-row input{ font-size:0.88rem; padding:12px 14px; letter-spacing:0.2px; }
+  .add-song-row input{ font-size:16px; padding:12px 14px; letter-spacing:0.2px; }
   .add-song-row button{
     background: var(--bg-soft); border:1px solid var(--panel-line);
     color:var(--amber); border-radius:10px; padding:0 18px; font-weight:700;
@@ -267,6 +267,22 @@
   #yt-player{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden; }
 
   ::selection{ background: var(--amber); color:#1a1210; }
+
+  /* ---- Small screen tightening ---- */
+  @media (max-width: 380px){
+    .hero-title{ font-size:2.1rem; }
+    .art-wrap{ width: 200px; height:200px; }
+    .controls-row{ gap:16px; }
+    .ctrl-play{ width:58px; height:58px; }
+    .topbar{ padding: 14px 16px 8px; }
+  }
+
+  /* ---- Larger tap targets on touch devices ---- */
+  @media (hover: none){
+    .ctrl-btn{ padding:10px; }
+    .queue-remove{ padding:8px; font-size:1.2rem; }
+    .copy-btn{ padding:11px 14px; }
+  }
 </style>
 </head>
 <body>
@@ -276,7 +292,7 @@
     <div class="brand-mark">🎧</div>
     <div>
       <div class="brand-text">Sync Suno</div>
-      <div class="brand-sub">saath mein suno, door se bhi</div>
+      <div class="brand-sub">listen together, any distance</div>
     </div>
   </div>
   <div class="room-badge" id="roomBadge"><span class="dot-live"></span><span id="roomBadgeText"></span></div>
@@ -284,24 +300,24 @@
 
 <!-- LANDING -->
 <div class="screen" id="landing">
-  <div class="hero-eyebrow">Kahin bhi ho, saath suno</div>
-  <h1 class="hero-title">Ek hi gaana,<br><em>ek hi pal</em> mein.</h1>
-  <p class="hero-desc">Room banao ya kisi ke room mein jud jao — gaana automatically sync ho jayega, chahe dost 1 km door ho ya 1000.</p>
+  <div class="hero-eyebrow">Wherever you are, listen together</div>
+  <h1 class="hero-title">One song,<br><em>one moment</em>.</h1>
+  <p class="hero-desc">Create a room or join a friend's — the song syncs automatically, whether they're 1 km away or 1000.</p>
 
   <div class="action-card">
-    <div class="action-label">Naya room banao</div>
-    <button class="btn btn-primary" id="createRoomBtn">✦ Room Banao</button>
+    <div class="action-label">Start a new room</div>
+    <button class="btn btn-primary" id="createRoomBtn">✦ Create Room</button>
   </div>
 
-  <div class="divider-row">ya</div>
+  <div class="divider-row">or</div>
 
   <div class="action-card">
-    <div class="action-label">Dost ka room code daalo</div>
+    <div class="action-label">Enter a friend's room code</div>
     <div class="input-row">
-      <input type="text" id="joinCodeInput" placeholder="jaise: SUNO-4821" maxlength="10" autocapitalize="characters">
+      <input type="text" id="joinCodeInput" placeholder="Paste room code" maxlength="40" autocapitalize="off" autocorrect="off">
     </div>
     <div style="height:12px"></div>
-    <button class="btn btn-secondary" id="joinRoomBtn">Room Mein Jao →</button>
+    <button class="btn btn-secondary" id="joinRoomBtn">Join Room →</button>
   </div>
 
   <div class="footer-credit">Made by Lokesh Patel · Lopa Studios</div>
@@ -314,12 +330,12 @@
       <div class="share-strip-text">Room code</div>
       <div class="share-strip-code" id="currentRoomCode">—</div>
     </div>
-    <button class="copy-btn" id="copyCodeBtn">Link Copy Karo</button>
+    <button class="copy-btn" id="copyCodeBtn">Copy Link</button>
   </div>
 
   <div class="add-song-bar">
     <div class="add-song-row">
-      <input type="text" id="searchInput" placeholder="Gaane ka naam likho... jaise 'Kesariya'">
+      <input type="text" id="searchInput" placeholder="Search a song... e.g. 'Kesariya'">
       <button id="searchBtn">🔍</button>
     </div>
     <div class="search-results" id="searchResults"></div>
@@ -330,7 +346,7 @@
       <div class="art-placeholder" id="artPlaceholder">🎵</div>
       <img id="artImg" style="display:none;">
     </div>
-    <div class="track-title" id="trackTitle">Koi gaana add karo shuru karne ke liye</div>
+    <div class="track-title" id="trackTitle">Add a song to get started</div>
     <div class="track-sub" id="trackSub">Waiting for song...</div>
 
     <div class="progress-wrap">
@@ -355,7 +371,7 @@
       </button>
     </div>
 
-    <div class="sync-status" id="syncStatus"><span class="dot-live"></span> Sync ho raha hai...</div>
+    <div class="sync-status" id="syncStatus"><span class="dot-live"></span> Syncing...</div>
   </div>
 
   <div id="queueSection" style="display:none;">
@@ -379,8 +395,8 @@
   const POLL_INTERVAL = 1500;
   const SYNC_TOLERANCE = 1.5; // seconds drift allowed before correcting
 
-  // Apni YouTube Data API v3 key yaha daalo (Google Cloud Console se free banti hai)
-  // Guide: console.cloud.google.com -> naya project -> "YouTube Data API v3" enable karo -> Credentials -> API Key banao
+  // Paste your YouTube Data API v3 key here (free from Google Cloud Console)
+  // Guide: console.cloud.google.com -> New Project -> enable "YouTube Data API v3" -> Credentials -> Create API Key
   const YT_API_KEY = "AIzaSyBKTJG2Yc8zcYAeAFPMc6BSedefrfLl2ko";
   let searchDebounceTimer = null;
 
@@ -450,6 +466,59 @@
     }catch(e){ /* ignore, will retry next poll */ }
   }
 
+  // ---------- Media Session (lock-screen controls) + Wake Lock ----------
+  // Shows play/pause/next/prev on the lock screen and notification shade
+  // like a real music app. Also keeps the screen from auto-locking while
+  // a song is playing, so playback doesn't get killed by the OS.
+  // Note: browsers still suspend playback once the screen actually locks
+  // or the app is fully backgrounded on iOS — this is a platform-level
+  // restriction on web pages, not something a website can fully override.
+  let wakeLock = null;
+
+  function setupMediaSession(){
+    if(!('mediaSession' in navigator)) return;
+    try{
+      navigator.mediaSession.setActionHandler('play', ()=>{ if(ytPlayer) ytPlayer.playVideo(); });
+      navigator.mediaSession.setActionHandler('pause', ()=>{ if(ytPlayer) ytPlayer.pauseVideo(); });
+      navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+      navigator.mediaSession.setActionHandler('nexttrack', playNext);
+    }catch(e){}
+  }
+
+  function updateMediaSessionMetadata(track){
+    if(!('mediaSession' in navigator) || !track) return;
+    try{
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title || "Sync Suno",
+        artist: "Sync Suno",
+        artwork: [{ src: track.thumb, sizes: '480x360', type: 'image/jpeg' }]
+      });
+    }catch(e){}
+  }
+
+  function updateMediaSessionPlaybackState(playing){
+    if(!('mediaSession' in navigator)) return;
+    try{ navigator.mediaSession.playbackState = playing ? 'playing' : 'paused'; }catch(e){}
+  }
+
+  async function requestWakeLock(){
+    if(!('wakeLock' in navigator)) return;
+    try{
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', ()=>{ wakeLock = null; });
+    }catch(e){ /* denied or unsupported, ignore */ }
+  }
+
+  function releaseWakeLock(){
+    if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+  }
+
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState === 'visible' && localPlaying){
+      requestWakeLock();
+    }
+  });
+
   // ---------- YouTube IFrame API ----------
   let ytApiLoaded = false;
   function loadYouTubeAPI(){
@@ -468,7 +537,7 @@
       height:'1', width:'1',
       playerVars:{ playsinline:1, controls:0, disablekb:1, rel:0, modestbranding:1 },
       events:{
-        onReady: ()=>{ ytReady = true; },
+        onReady: ()=>{ ytReady = true; setupMediaSession(); },
         onStateChange: onPlayerStateChange
       }
     });
@@ -480,15 +549,22 @@
       document.getElementById('playIcon').innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
       document.getElementById('artWrap').classList.add('playing');
       startProgressLoop();
+      updateMediaSessionPlaybackState(true);
+      requestWakeLock();
       if(!suppressNextPush) pushState('play');
     } else if(e.data === YT.PlayerState.PAUSED){
       localPlaying = false;
       document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
       document.getElementById('artWrap').classList.remove('playing');
       stopProgressLoop();
+      updateMediaSessionPlaybackState(false);
+      releaseWakeLock();
       if(!suppressNextPush) pushState('pause');
     } else if(e.data === YT.PlayerState.ENDED){
-      if(isHost) playNext();
+      // Whoever's device notices the song ended advances the queue —
+      // more reliable than host-only, since mobile browsers can throttle
+      // background tabs and delay the host's ENDED event.
+      playNext();
     }
     suppressNextPush = false;
   }
@@ -509,27 +585,39 @@
   function stopProgressLoop(){ if(progressTimer) clearInterval(progressTimer); }
 
   // ---------- Room / Sync logic ----------
-  function bucketFromRoom(code){
-    return "syncsuno_" + code.toLowerCase().replace(/[^a-z0-9]/g,'');
+  // kvdb.io does NOT let you invent bucket names — a bucket must be created
+  // via the API first, which returns a real bucket ID. So the room "code"
+  // IS that real bucket ID (case-sensitive, must match exactly).
+  async function createKvBucket(){
+    const res = await fetch(`${KV_BASE}/`, { method:"POST" });
+    if(!res.ok) throw new Error("bucket create failed");
+    const id = (await res.text()).trim();
+    if(!id) throw new Error("empty bucket id");
+    return id;
   }
 
   async function createRoom(){
-    roomCode = genCode();
-    bucket = bucketFromRoom(roomCode);
-    isHost = true;
-    await kvSet('state', { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() });
-    enterRoom();
-    toast("Room ban gaya! Link copy karke dost ko bhejo.");
+    try{
+      toast("Creating room...");
+      bucket = await createKvBucket();
+      roomCode = bucket;
+      isHost = true;
+      await kvSet('state', { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() });
+      enterRoom();
+      toast("Room created! Copy the link and send it to your friend.");
+    }catch(e){
+      toast("Couldn't create room, please try again");
+    }
   }
 
   async function joinRoom(code){
-    if(!code || code.trim().length < 3){ toast("Sahi room code daalo"); return; }
-    roomCode = code.trim().toUpperCase();
-    bucket = bucketFromRoom(roomCode);
+    if(!code || code.trim().length < 3){ toast("Enter a valid room code"); return; }
+    roomCode = code.trim();
+    bucket = roomCode;
     isHost = false;
     const existing = await kvGet('state');
     if(existing === null){
-      toast("Room nahi mila — code check karo ya naya room banao");
+      toast("Room not found — check the code or create a new room");
       bucket = null; roomCode = null;
       return;
     }
@@ -621,11 +709,11 @@
     if(!query || query.trim().length < 2){ resultsBox.innerHTML = ''; return; }
 
     if(!YT_API_KEY || YT_API_KEY.indexOf('PASTE_') === 0){
-      resultsBox.innerHTML = '<div class="search-empty">API key set nahi hui — index.html mein YT_API_KEY daalo.</div>';
+      resultsBox.innerHTML = '<div class="search-empty">API key not set — add your YT_API_KEY inside index.html.</div>';
       return;
     }
 
-    resultsBox.innerHTML = '<div class="search-loading">Dhundh rahe hai...</div>';
+    resultsBox.innerHTML = '<div class="search-loading">Searching...</div>';
 
     try{
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(query)}&key=${YT_API_KEY}`;
@@ -633,12 +721,12 @@
       const data = await res.json();
 
       if(data.error){
-        resultsBox.innerHTML = `<div class="search-empty">Search fail hui: ${data.error.message || 'API error'}</div>`;
+        resultsBox.innerHTML = `<div class="search-empty">Search failed: ${data.error.message || 'API error'}</div>`;
         return;
       }
 
       if(!data.items || data.items.length === 0){
-        resultsBox.innerHTML = '<div class="search-empty">Kuch nahi mila, dusra naam try karo</div>';
+        resultsBox.innerHTML = '<div class="search-empty">No results, try a different search</div>';
         return;
       }
 
@@ -666,7 +754,7 @@
         resultsBox.appendChild(div);
       });
     }catch(e){
-      resultsBox.innerHTML = '<div class="search-empty">Search fail hui, phir try karo</div>';
+      resultsBox.innerHTML = '<div class="search-empty">Search failed, please try again</div>';
     }
   }
 
@@ -687,7 +775,7 @@
       await loadTrack(0, true);
     }
     pushState('queue_update');
-    toast("Gaana add ho gaya 🎵");
+    toast("Song added 🎵");
   }
 
   async function loadTrack(idx, autoplay){
@@ -708,10 +796,11 @@
     const track = queue[currentIndex];
     if(!track) return;
     document.getElementById('trackTitle').textContent = track.title || "Loading...";
-    document.getElementById('trackSub').textContent = "Ab baj raha hai";
+    document.getElementById('trackSub').textContent = "Now playing";
     document.getElementById('artImg').src = track.thumb;
     document.getElementById('artImg').style.display = 'block';
     document.getElementById('artPlaceholder').style.display = 'none';
+    updateMediaSessionMetadata(track);
   }
 
   function renderQueue(){
@@ -775,7 +864,7 @@
 
   document.getElementById('playBtn').addEventListener('click', async ()=>{
     if(!ytReady){ await initPlayer(); }
-    if(currentIndex === -1){ toast("Pehle ek gaana add karo"); return; }
+    if(currentIndex === -1){ toast("Add a song first"); return; }
     const state = ytPlayer.getPlayerState();
     if(state === YT.PlayerState.PLAYING){ ytPlayer.pauseVideo(); }
     else{ ytPlayer.playVideo(); }
@@ -796,7 +885,7 @@
     const url = new URL(window.location.href);
     url.searchParams.set('room', roomCode);
     navigator.clipboard.writeText(url.toString()).then(()=>{
-      toast("Link copy ho gaya! Dost ko bhejo 🎵");
+      toast("Link copied! Send it to your friend 🎵");
     }).catch(()=>{
       toast("Room code: " + roomCode);
     });
