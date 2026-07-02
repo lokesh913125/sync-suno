@@ -390,7 +390,7 @@
   "use strict";
 
   // ---------- Config ----------
-  const KV_BASE = "https://kvdb.io"; // free keyless kv store
+  const KV_BASE = "https://api.jsonstorage.net/v1/json"; // free, CORS-enabled JSON store; returns ID in the response body
   const KV_BUCKET_STORAGE_KEY = "syncsuno_bucket";
   const POLL_INTERVAL = 1500;
   const SYNC_TOLERANCE = 1.5; // seconds drift allowed before correcting
@@ -447,20 +447,22 @@
     return null;
   }
 
-  async function kvGet(key){
+  // Each room's data lives at KV_BASE/{bucket}, where bucket is the
+  // "userId/itemId" path returned when the room was created.
+  async function kvGet(){
     try{
-      const res = await fetch(`${KV_BASE}/${bucket}/${key}`, {cache:"no-store"});
+      const res = await fetch(`${KV_BASE}/${bucket}`, {cache:"no-store", headers:{"Accept":"application/json"}});
       if(res.status === 404) return null;
       if(!res.ok) return null;
-      const text = await res.text();
-      return text ? JSON.parse(text) : null;
+      return await res.json();
     }catch(e){ return null; }
   }
 
-  async function kvSet(key, value){
+  async function kvSet(value){
     try{
-      await fetch(`${KV_BASE}/${bucket}/${key}`, {
-        method:"POST",
+      await fetch(`${KV_BASE}/${bucket}`, {
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
         body: JSON.stringify(value)
       });
     }catch(e){ /* ignore, will retry next poll */ }
@@ -585,28 +587,38 @@
   function stopProgressLoop(){ if(progressTimer) clearInterval(progressTimer); }
 
   // ---------- Room / Sync logic ----------
-  // kvdb.io does NOT let you invent bucket names — a bucket must be created
-  // via the API first, which returns a real bucket ID. So the room "code"
-  // IS that real bucket ID (case-sensitive, must match exactly).
-  async function createKvBucket(){
-    const res = await fetch(`${KV_BASE}/`, { method:"POST" });
-    if(!res.ok) throw new Error("bucket create failed");
-    const id = (await res.text()).trim();
-    if(!id) throw new Error("empty bucket id");
-    return id;
+  // jsonstorage.net creates a fresh JSON record when you POST to it, and —
+  // importantly — returns its ID directly in the JSON response body
+  // (as { "uri": "https://api.jsonstorage.net/v1/json/{userId}/{itemId}" }).
+  // This avoids relying on response headers like Location, which browsers
+  // hide from JavaScript on cross-origin requests unless a server opts in —
+  // that hidden-header issue was the actual cause of "create room" failing.
+  async function createJsonRecord(initialState){
+    const res = await fetch(KV_BASE, {
+      method:"POST",
+      headers:{"Content-Type":"application/json", "Accept":"application/json"},
+      body: JSON.stringify(initialState)
+    });
+    if(!res.ok) throw new Error("record create failed: " + res.status);
+    const data = await res.json();
+    if(!data || !data.uri) throw new Error("no uri in response");
+    const marker = "/v1/json/";
+    const idx = data.uri.indexOf(marker);
+    if(idx === -1) throw new Error("unexpected uri format");
+    return data.uri.substring(idx + marker.length);
   }
 
   async function createRoom(){
     try{
       toast("Creating room...");
-      bucket = await createKvBucket();
+      const initialState = { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() };
+      bucket = await createJsonRecord(initialState);
       roomCode = bucket;
       isHost = true;
-      await kvSet('state', { queue:[], index:-1, playing:false, time:0, updatedAt: Date.now() });
       enterRoom();
       toast("Room created! Copy the link and send it to your friend.");
     }catch(e){
-      toast("Couldn't create room, please try again");
+      toast("Couldn't create room, check your connection and try again");
     }
   }
 
@@ -615,7 +627,7 @@
     roomCode = code.trim();
     bucket = roomCode;
     isHost = false;
-    const existing = await kvGet('state');
+    const existing = await kvGet();
     if(existing === null){
       toast("Room not found — check the code or create a new room");
       bucket = null; roomCode = null;
